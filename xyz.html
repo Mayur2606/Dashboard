@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Interactive Sales Performance Dashboard</title>
+  <!-- Latest Plotly.js CDN -->
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background-color: #e0f7fa; /* Icy blue background */
+      color: #333;
+    }
+    h1 {
+      text-align: center;
+      color: #333;
+    }
+    .chart {
+      width: 40%;
+      height: 400px;
+      margin: 20px auto;
+      padding: 20px;
+      background: rgba(255, 255, 255, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: 16px;
+      box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+      backdrop-filter: blur(5px);
+    }
+    #uploader {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Interactive Sales Performance Dashboard</h1>
+  <div id="uploader">
+    <input type="file" id="jsonFile" accept=".json">
+  </div>
+
+  <!-- Chart containers -->
+  <div id="chart1" class="chart"></div>
+  <div id="chart2" class="chart"></div>
+  <div id="chart3" class="chart"></div>
+  <div id="chart4" class="chart"></div>
+  <div id="chart5" class="chart"></div>
+
+  <script>
+    // Listen for file upload and parse JSON
+    document.getElementById('jsonFile').addEventListener('change', function(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const data = JSON.parse(e.target.result);
+          generateDashboard(data);
+        } catch (err) {
+          alert("Error parsing JSON: " + err);
+        }
+      };
+      reader.readAsText(file);
+    });
+
+    function generateDashboard(data) {
+      // Ensure data is an array of objects
+      if (!Array.isArray(data)) {
+        alert("Invalid data format. Expected an array of sales records.");
+        return;
+      }
+
+      // ---------- Visualization 1: Total Sales Over Time ----------
+      const salesByDate = {};
+      data.forEach(item => {
+        const date = item.Date;
+        const totalSales = Number(item["Total Sales"]) || 0;
+        salesByDate[date] = (salesByDate[date] || 0) + totalSales;
+      });
+      const dates = Object.keys(salesByDate).sort();
+      const salesValues = dates.map(date => salesByDate[date]);
+
+      const trace1 = {
+        x: dates,
+        y: salesValues,
+        type: 'scatter',
+        mode: 'lines+markers',
+        marker: {color: 'blue'},
+        name: 'Total Sales'
+      };
+
+      const layout1 = {
+        title: 'Total Sales Over Time',
+        xaxis: { title: 'Date' },
+        yaxis: { title: 'Total Sales' }
+      };
+
+      Plotly.newPlot('chart1', [trace1], layout1);
+
+      // ---------- Visualization 2: Sales by City ----------
+      const salesByCity = {};
+      data.forEach(item => {
+        const city = item.City;
+        const totalSales = Number(item["Total Sales"]) || 0;
+        salesByCity[city] = (salesByCity[city] || 0) + totalSales;
+      });
+      const cities = Object.keys(salesByCity);
+      const salesCityValues = cities.map(city => salesByCity[city]);
+
+      const trace2 = {
+        x: cities,
+        y: salesCityValues,
+        type: 'bar',
+        marker: {color: 'orange'},
+        name: 'Sales by City'
+      };
+
+      const layout2 = {
+        title: 'Sales by City',
+        xaxis: { title: 'City' },
+        yaxis: { title: 'Total Sales' }
+      };
+
+      Plotly.newPlot('chart2', [trace2], layout2);
+
+      // ---------- Visualization 3: Product Performance Breakdown ----------
+      const salesByProduct = {};
+      data.forEach(item => {
+        const product = item.Product;
+        const totalSales = Number(item["Total Sales"]) || 0;
+        salesByProduct[product] = (salesByProduct[product] || 0) + totalSales;
+      });
+      const products = Object.keys(salesByProduct);
+      const salesProductValues = products.map(product => salesByProduct[product]);
+
+      const trace3 = {
+        labels: products,
+        values: salesProductValues,
+        type: 'pie',
+        name: 'Product Performance'
+      };
+
+      const layout3 = {
+        title: 'Product Performance Breakdown'
+      };
+
+      Plotly.newPlot('chart3', [trace3], layout3);
+
+      // ---------- Visualization 4: Salesperson Performance ----------
+      const salesByPerson = {};
+      data.forEach(item => {
+        const person = item["Sales Person"];
+        const totalSales = Number(item["Total Sales"]) || 0;
+        salesByPerson[person] = (salesByPerson[person] || 0) + totalSales;
+      });
+      const persons = Object.keys(salesByPerson);
+      const salesPersonValues = persons.map(person => salesByPerson[person]);
+
+      const trace4 = {
+        x: persons,
+        y: salesPersonValues,
+        type: 'bar',
+        marker: {color: 'green'},
+        name: 'Salesperson Performance'
+      };
+
+      const layout4 = {
+        title: 'Salesperson Performance',
+        xaxis: { title: 'Sales Person' },
+        yaxis: { title: 'Total Sales' }
+      };
+
+      Plotly.newPlot('chart4', [trace4], layout4);
+
+      // ---------- Visualization 5: Compensation Efficiency ----------
+      const compEfficiency = {};
+      data.forEach(item => {
+        const person = item["Sales Person"];
+        const totalSalary = Number(item["Total Salary"]) || 0;
+        const totalSales = Number(item["Total Sales"]) || 0;
+        if (compEfficiency[person]) {
+          compEfficiency[person].salary += totalSalary;
+          compEfficiency[person].sales += totalSales;
+        } else {
+          compEfficiency[person] = { salary: totalSalary, sales: totalSales };
+        }
+      });
+      const personsEfficiency = Object.keys(compEfficiency);
+      const efficiencyValues = personsEfficiency.map(person => {
+        const { salary, sales } = compEfficiency[person];
+        return sales ? (salary / sales * 100).toFixed(2) : 0;
+      });
+
+      const trace5 = {
+        x: personsEfficiency,
+        y: efficiencyValues,
+        type: 'bar',
+        marker: {color: 'red'},
+        name: 'Compensation Efficiency (%)'
+      };
+
+      const layout5 = {
+        title: 'Compensation Efficiency by Salesperson (Total Salary / Total Sales %)',
+        xaxis: { title: 'Sales Person' },
+        yaxis: { title: 'Efficiency (%)' }
+      };
+
+      Plotly.newPlot('chart5', [trace5], layout5);
+    }
+  </script>
+</body>
+</html>
