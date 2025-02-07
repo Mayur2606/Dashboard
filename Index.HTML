@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sales Performance Dashboard</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+        .container {
+            width: 90%;
+            margin: auto;
+        }
+        .chart {
+            width: 100%;
+            height: 400px;
+        }
+    </style>
+</head>
+<body>
+    <h2>Sales Performance Dashboard</h2>
+    <input type="file" id="fileInput" accept="application/json">
+    <div class="container">
+        <div id="salesByCity" class="chart"></div>
+        <div id="salesByPerson" class="chart"></div>
+        <div id="productSales" class="chart"></div>
+        <div id="incentiveVsSales" class="chart"></div>
+        <div id="monthlySales" class="chart"></div>
+    </div>
+
+    <script>
+        document.getElementById('fileInput').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const data = JSON.parse(e.target.result);
+                    generateDashboard(data);
+                };
+                reader.readAsText(file);
+            }
+        });
+
+        function generateDashboard(data) {
+            const salesByCity = {};
+            const salesByPerson = {};
+            const productSales = {};
+            const incentives = [];
+            const totalSales = [];
+            const dates = [];
+            
+            data.forEach(sale => {
+                salesByCity[sale.City] = (salesByCity[sale.City] || 0) + sale["Total Sales"];
+                salesByPerson[sale["Sales Person"]] = (salesByPerson[sale["Sales Person"]] || 0) + sale["Total Sales"];
+                productSales[sale.Product] = (productSales[sale.Product] || 0) + sale["Total Sales"];
+                incentives.push(sale.Incetive);
+                totalSales.push(sale["Total Sales"]);
+                dates.push(sale.Date);
+            });
+            
+            Plotly.newPlot('salesByCity', [{
+                x: Object.keys(salesByCity),
+                y: Object.values(salesByCity),
+                type: 'bar',
+                marker: { color: 'blue' }
+            }], { title: 'Total Sales by City' });
+            
+            Plotly.newPlot('salesByPerson', [{
+                labels: Object.keys(salesByPerson),
+                values: Object.values(salesByPerson),
+                type: 'pie'
+            }], { title: 'Sales Performance by Sales Person' });
+            
+            Plotly.newPlot('productSales', [{
+                labels: Object.keys(productSales),
+                values: Object.values(productSales),
+                type: 'pie'
+            }], { title: 'Product-wise Sales Distribution' });
+            
+            Plotly.newPlot('incentiveVsSales', [{
+                x: incentives,
+                y: totalSales,
+                mode: 'markers',
+                type: 'scatter'
+            }], { title: 'Incentives vs. Total Sales' });
+            
+            Plotly.newPlot('monthlySales', [{
+                x: dates,
+                y: totalSales,
+                type: 'scatter',
+                mode: 'lines+markers',
+                line: { color: 'green' }
+            }], { title: 'Monthly Sales Trend' });
+        }
+    </script>
+</body>
+</html>
